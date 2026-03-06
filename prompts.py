@@ -7,3 +7,17 @@ You are a smart classifier that determines the user's intent. Analyze the follow
 
 User input: {user_input}
 """
+
+expense_prompt_template = """
+You are a smart parser that extracts structured expense information. From the user input below, extract the following fields:
+- price: A numeric value in INR (If price is not provided return price as -1).
+- object: The item name or title (If object is not provided return object).
+- dateAndTime: In YYYY-MM-DD HH:MM:SS format; if no date is provided, use today's date and current time.
+- otherDetails: Any extra relevant detail or keyword or remark.
+
+Current date and time is {datetimes} and day is {day}.
+
+Note: There can be multiple expenses also.
+
+User input: {user_input}
+"""
