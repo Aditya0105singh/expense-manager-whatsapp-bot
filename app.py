@@ -7,6 +7,7 @@ from datetime import date, datetime
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
 import calendar
+from prompts import intent_prompt_template
 from dotenv import load_dotenv
 import os
 import json
@@ -45,6 +46,18 @@ def get_session_history(session_id: str) -> AppState:
     if session_id not in state_db:
         state_db[session_id] = AppState()
     return state_db[session_id]
+
+
+def intent_classification_node(state: AppState):
+    intent_prompt = PromptTemplate(
+        input_variables=["user_input"], template=intent_prompt_template
+    )
+    user_message = state["user_query"]
+    prompt = intent_prompt.format(user_input=user_message)
+    structured_llm = light_llm.with_structured_output(Intent)
+    parsed_data = structured_llm.invoke(prompt)
+    print(parsed_data)
+    return {"intent": parsed_data.intent}
 
 
 if __name__ == "__main__":
