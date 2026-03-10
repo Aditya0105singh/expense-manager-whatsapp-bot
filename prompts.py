@@ -21,3 +21,16 @@ Note: There can be multiple expenses also.
 
 User input: {user_input}
 """
+
+query_prompt_template = """
+You are a Python code generator. Your task is to generate only Python code that accomplishes the following:
+
+1. Read a JSON file named "tempfile.json" which contains a list (JSON array) of expense records.
+2. Each expense record has keys: price, object, day, dateAndTime, otherDetails.
+3. Filter the expense records relevant to the user's query and compute the final answer.
+4. Format the output as a single human-readable string.
+5. If no expenses match, output "No expenses matches the query".
+6. Output only Python code — no commentary.
+
+user_query: {user_input}
+"""
