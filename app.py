@@ -7,10 +7,14 @@ from datetime import date, datetime
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
 import calendar
-from prompts import intent_prompt_template, expense_prompt_template
+from prompts import (
+    intent_prompt_template, expense_prompt_template,
+    query_prompt_template, query_prompt_template_backup,
+)
 from dotenv import load_dotenv
 import os
 import json
+import subprocess
 
 load_dotenv()
 
@@ -52,10 +56,8 @@ def intent_classification_node(state: AppState):
     intent_prompt = PromptTemplate(
         input_variables=["user_input"], template=intent_prompt_template
     )
-    user_message = state["user_query"]
-    prompt = intent_prompt.format(user_input=user_message)
-    structured_llm = light_llm.with_structured_output(Intent)
-    parsed_data = structured_llm.invoke(prompt)
+    prompt = intent_prompt.format(user_input=state["user_query"])
+    parsed_data = light_llm.with_structured_output(Intent).invoke(prompt)
     print(parsed_data)
     return {"intent": parsed_data.intent}
 
@@ -65,16 +67,48 @@ def parse_expense_node(state: AppState):
         input_variables=["user_input", "datetimes", "day"],
         template=expense_prompt_template,
     )
-    user_message = state["user_query"]
     prompt = expense_prompt.format(
-        user_input=user_message,
+        user_input=state["user_query"],
         datetimes=datetime.today(),
         day=calendar.day_name[date.today().weekday()],
     )
-    structured_llm = light_llm.with_structured_output(Expenses)
-    parsed_data = structured_llm.invoke(prompt)
+    parsed_data = light_llm.with_structured_output(Expenses).invoke(prompt)
     print(parsed_data)
     return {"expenses": parsed_data.expenses, "new_expenses": parsed_data.expenses}
+
+
+def query_expense_node(state: AppState):
+    expenses_json = expenses_to_json(state["expenses"])
+    user_message = state["user_query"]
+
+    with open("tempfile.json", "w") as f:
+        json.dump(expenses_json, f, default=str)
+
+    q_prompt = PromptTemplate(
+        input_variables=["user_input"], template=query_prompt_template
+    )
+    output_code = heavy_llm.invoke(q_prompt.format(user_input=user_message))
+    if "```python" in output_code.content:
+        output_code = output_code.content[9:-3]
+
+    with open("temp.py", "w") as f:
+        f.write(output_code)
+
+    result = subprocess.run(
+        ["python3", "temp.py"], capture_output=True, text=True, timeout=10
+    )
+    if result.returncode != 0:
+        backup = PromptTemplate(
+            input_variables=["user_input", "expenses_data"],
+            template=query_prompt_template_backup,
+        )
+        query_response = heavy_llm.invoke(
+            backup.format(user_input=user_message, expenses_data=str(expenses_json))
+        ).content
+    else:
+        query_response = result.stdout
+
+    return {"query_response": query_response}
 
 
 if __name__ == "__main__":
