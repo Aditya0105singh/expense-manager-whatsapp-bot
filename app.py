@@ -7,10 +7,8 @@ from datetime import date, datetime
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
 import calendar
-from prompts import (
-    intent_prompt_template, expense_prompt_template,
-    query_prompt_template, query_prompt_template_backup,
-)
+from prompts import *
+from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
 import json
@@ -80,20 +78,16 @@ def parse_expense_node(state: AppState):
 def query_expense_node(state: AppState):
     expenses_json = expenses_to_json(state["expenses"])
     user_message = state["user_query"]
-
     with open("tempfile.json", "w") as f:
         json.dump(expenses_json, f, default=str)
-
     q_prompt = PromptTemplate(
         input_variables=["user_input"], template=query_prompt_template
     )
     output_code = heavy_llm.invoke(q_prompt.format(user_input=user_message))
     if "```python" in output_code.content:
         output_code = output_code.content[9:-3]
-
     with open("temp.py", "w") as f:
         f.write(output_code)
-
     result = subprocess.run(
         ["python3", "temp.py"], capture_output=True, text=True, timeout=10
     )
@@ -107,8 +101,34 @@ def query_expense_node(state: AppState):
         ).content
     else:
         query_response = result.stdout
-
     return {"query_response": query_response}
+
+
+def final_response_node(state: AppState):
+    if state["intent"] == "Expense":
+        final_prompt = PromptTemplate(
+            input_variables=["new_expenses"], template=final_response_prompt["Expense"]
+        )
+        prompt = final_prompt.format(
+            new_expenses=str(expenses_to_json(state["new_expenses"]))
+        )
+    elif state["intent"] == "Query":
+        final_prompt = PromptTemplate(
+            input_variables=["query_response", "user_query"],
+            template=final_response_prompt["Query"],
+        )
+        prompt = final_prompt.format(
+            query_response=state["query_response"], user_query=state["user_query"]
+        )
+    else:
+        final_prompt = PromptTemplate(
+            input_variables=["user_query"], template=final_response_prompt["Others"]
+        )
+        prompt = final_prompt.format(user_query=state["user_query"])
+
+    prompt = HumanMessage(prompt)
+    response = heavy_llm.invoke(state["messages"] + [prompt])
+    return {"final_response": response.content, "messages": [response]}
 
 
 if __name__ == "__main__":
