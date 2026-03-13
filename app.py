@@ -9,6 +9,7 @@ from langchain.prompts import PromptTemplate
 import calendar
 from prompts import *
 from langchain_core.messages import HumanMessage
+from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv
 import os
 import json
@@ -130,6 +131,37 @@ def final_response_node(state: AppState):
     response = heavy_llm.invoke(state["messages"] + [prompt])
     return {"final_response": response.content, "messages": [response]}
 
+
+def intent_check(state: AppState):
+    return state["intent"]
+
+
+graph = StateGraph(AppState)
+graph.support_multiple_edges = True
+
+graph.add_node("intent_classifier_node", intent_classification_node)
+graph.add_node("parse_expense_node", parse_expense_node)
+graph.add_node("query_expense_node", query_expense_node)
+graph.add_node("final_response_node", final_response_node)
+
+graph.add_conditional_edges(
+    "intent_classifier_node",
+    intent_check,
+    {
+        "Query": "query_expense_node",
+        "Expense": "parse_expense_node",
+        "Others": "final_response_node",
+    },
+)
+
+graph.add_edge("parse_expense_node", "final_response_node")
+graph.add_edge("query_expense_node", "final_response_node")
+
+graph.set_entry_point("intent_classifier_node")
+graph.set_finish_point("final_response_node")
+
+graph_app = graph.compile()
+print("LangGraph workflow compiled successfully.")
 
 if __name__ == "__main__":
     app.run(port=5002)
