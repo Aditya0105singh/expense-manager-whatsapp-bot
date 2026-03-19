@@ -5,7 +5,6 @@ output.txt
 state_db.pkl
 temp.py
 tempfile.json
-my_graph.png
 __pycache__
 .DS_Store
 *.pkl
