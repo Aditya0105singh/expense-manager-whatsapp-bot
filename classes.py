@@ -1,10 +1,8 @@
 from typing import Annotated, List, Literal, TypedDict, Optional
 from langchain_core.messages import AnyMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
 import operator
 from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import Literal
 
 
 class Intent(BaseModel):
