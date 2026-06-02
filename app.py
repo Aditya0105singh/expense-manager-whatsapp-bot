@@ -8,7 +8,7 @@ from classes import *
 from datetime import date
 from datetime import datetime
 from langchain_groq import ChatGroq
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import calendar
 from prompts import *
 from dotenv import load_dotenv
