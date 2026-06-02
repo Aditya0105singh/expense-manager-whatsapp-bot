@@ -205,11 +205,13 @@ graph.set_entry_point("intent_classifier_node")
 graph.set_finish_point("final_response_node")
 
 graph_app = graph.compile()
-png_graph = graph_app.get_graph().draw_mermaid_png()
-with open("my_graph.png", "wb") as f:
-    f.write(png_graph)
-
-print(f"Graph saved as 'my_graph.png' in {os.getcwd()}")
+try:
+    png_graph = graph_app.get_graph().draw_mermaid_png()
+    with open("my_graph.png", "wb") as f:
+        f.write(png_graph)
+    print(f"Graph saved as 'my_graph.png' in {os.getcwd()}")
+except Exception:
+    print("Graph image generation skipped.")
 
 
 @app.route("/", methods=["POST"])
