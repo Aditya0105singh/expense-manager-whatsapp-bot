@@ -22,7 +22,7 @@ class Expense(BaseModel):
         "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
     ] = Field(description="Day on which the expense was made.")
     dateAndTime: datetime = Field(
-        description="The full datetime on which the expense was made (format: YYYY-MM-DD HH:MM:SS)."
+        description="The full datetime on which the expense was made. Use ISO 8601 format: YYYY-MM-DDTHH:MM:SS (e.g. 2026-06-03T14:30:00). The T between date and time is mandatory."
     )
     otherDetails: str = Field(
         description="Here add any other details that are relevant to user requests."
